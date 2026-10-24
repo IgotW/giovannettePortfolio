@@ -1,17 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Lenis from "lenis";
 import "lenis/dist/lenis.css";
+import {
+  IconBrandAdobeIllustrator,
+  IconBrandAdobePhotoshop,
+  IconBrandFigma,
+  IconPalette,
+  IconPhotoSpark,
+} from "@tabler/icons-react";
 import "./App.css";
 import profileImage from "./assets/profile.jpeg";
 import descriptions from "./assets/data/description.js";
 import clients from "./assets/data/clients.js";
+import tools from "./assets/data/tools.js";
 
-const imageModules = import.meta.glob("./assets/images/**/*.{png,jpg,jpeg}", {
+const imageModules = import.meta.glob("./assets/optimized/**/*.webp", {
   eager: true,
   query: "?url",
   import: "default",
 });
-const thumbnailModules = import.meta.glob("./assets/thumbnails/**/*.jpg", {
+const thumbnailModules = import.meta.glob("./assets/thumbnails/**/*.webp", {
   eager: true,
   query: "?url",
   import: "default",
@@ -35,9 +43,10 @@ const makeTitle = (file) =>
 const projects = Object.entries(imageModules).map(([path, image], index) => {
   const parts = path.split("/");
   const category = parts.at(-2);
-  const thumbnailPath = path
-    .replace("./assets/images/", "./assets/thumbnails/")
-    .replace(/\.(png|jpe?g)$/i, ".jpg");
+  const thumbnailPath = path.replace(
+    "./assets/optimized/",
+    "./assets/thumbnails/",
+  );
   return {
     id: index,
     image,
@@ -49,6 +58,14 @@ const projects = Object.entries(imageModules).map(([path, image], index) => {
       descriptions[makeTitle(parts.at(-1))] || "Project description goes here.",
   };
 });
+
+const toolIcons = {
+  photoshop: IconBrandAdobePhotoshop,
+  illustrator: IconBrandAdobeIllustrator,
+  freepik: IconPhotoSpark,
+  canva: IconPalette,
+  figma: IconBrandFigma,
+};
 
 function buildGalleryItems(projectList, clientNames) {
   // Figure out which projects belong to which client
@@ -86,15 +103,55 @@ function buildGalleryItems(projectList, clientNames) {
   return items;
 }
 
+function useScrollReveal(revision) {
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return undefined;
+    }
+
+    const elements = document.querySelectorAll(
+      "[data-reveal]:not(.is-revealed)",
+    );
+    if (!elements.length) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) {
+            return;
+          }
+          entry.target.classList.add("is-revealed");
+          observer.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -8% 0px" },
+    );
+
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [revision]);
+}
+
 function ProjectCard({ project, index, onClick }) {
   return (
     <button
       className="project-card"
+      data-reveal
+      style={{ "--reveal-delay": `${(index % 3) * 70}ms` }}
       onClick={onClick}
       aria-label={`View ${project.title}`}
     >
       <div className="project-image">
-        <img src={project.thumbnail} alt="" loading="lazy" decoding="async" />
+        <img
+          src={project.thumbnail}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          width="720"
+          height="720"
+        />
         <span className="view-project">
           <ArrowUpRight />
         </span>
@@ -113,6 +170,158 @@ function ProjectCard({ project, index, onClick }) {
   );
 }
 
+function ToolCard({ tool, index }) {
+  const Icon = toolIcons[tool.icon] ?? IconPalette;
+
+  return (
+    <article
+      className="tool-card"
+      data-reveal
+      style={{
+        "--tool-color": tool.color,
+        "--reveal-delay": `${(index % 5) * 60}ms`,
+      }}
+    >
+      <div className="tool-top">
+        <span className="tool-mark" aria-hidden="true">
+          <Icon size={26} stroke={1.5} />
+        </span>
+        <span className="tool-index">{String(index + 1).padStart(2, "0")}</span>
+      </div>
+      <div>
+        <h3>{tool.name}</h3>
+        <p>{tool.description}</p>
+      </div>
+      <ul className="tool-tags" aria-label={`Used for ${tool.usedFor.join(", ")}`}>
+        {tool.usedFor.map((category) => (
+          <li key={category}>{category}</li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+
+function ProjectModal({ project, client, onClose, onBackToClient }) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  return (
+    <div
+      className="modal-backdrop project-backdrop"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        className="project-modal"
+        data-lenis-prevent
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="project-modal-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          className="close-modal"
+          onClick={onClose}
+          aria-label={client ? `Back to ${client.name}` : "Close project"}
+          autoFocus
+        >
+          ×
+        </button>
+
+        <div className="project-modal-media">
+          <img
+            className={`modal-placeholder${imageLoaded ? " is-hidden" : ""}`}
+            src={project.thumbnail}
+            alt=""
+            aria-hidden="true"
+          />
+          <img
+            className={`modal-image${imageLoaded ? " is-loaded" : ""}`}
+            src={project.image}
+            alt={project.title}
+            decoding="async"
+            fetchPriority="high"
+            onLoad={() => setImageLoaded(true)}
+          />
+        </div>
+
+        <div className="project-modal-detail">
+          {client && <p className="project-modal-client">{client.name}</p>}
+          <p className="eyebrow">{project.label}</p>
+          <h3 id="project-modal-title">{project.title}</h3>
+          <p className="project-modal-description">{project.description}</p>
+
+          <div className="project-modal-meta">
+            <div>
+              <span>Category</span>
+              <p>{project.label}</p>
+            </div>
+            {client && (
+              <div>
+                <span>Client</span>
+                <p>{client.name}</p>
+              </div>
+            )}
+          </div>
+
+          {client && (
+            <button className="modal-back-link" onClick={onBackToClient}>
+              <span aria-hidden="true">←</span> Back to {client.name}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ClientModal({ client, onClose, onOpenProject }) {
+  useScrollReveal(client.name);
+
+  return (
+    <div
+      className="modal-backdrop"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        className="client-modal"
+        data-lenis-prevent
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="client-modal-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          className="close-modal"
+          onClick={onClose}
+          aria-label={`Close ${client.name} projects`}
+          autoFocus
+        >
+          ×
+        </button>
+        <div className="client-modal-header">
+          <p className="eyebrow">Client collection</p>
+          <h3 id="client-modal-title">{client.name}</h3>
+          <p>
+            {client.projects.length} selected project
+            {client.projects.length === 1 ? "" : "s"}
+          </p>
+        </div>
+        <div className="gallery client-modal-gallery">
+          {client.projects.map((project, index) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              index={index}
+              onClick={() => onOpenProject(project)}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ArrowUpRight() {
   return (
     <span aria-hidden="true" className="arrow">
@@ -125,21 +334,61 @@ function App() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
+  const lenisRef = useRef(null);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return undefined;
     }
 
+    document.documentElement.classList.add("reveal-ready");
+
     const lenis = new Lenis({
       autoRaf: true,
-      lerp: 0.1,
+      lerp: 0.09,
       wheelMultiplier: 0.9,
-      anchors: { duration: 1.1 },
+      smoothWheel: true,
+      anchors: { duration: 1.15 },
     });
+    lenisRef.current = lenis;
 
-    return () => lenis.destroy();
+    return () => {
+      lenis.destroy();
+      lenisRef.current = null;
+      document.documentElement.classList.remove("reveal-ready");
+    };
   }, []);
+
+  const isModalOpen = Boolean(selectedProject || selectedClient);
+
+  useEffect(() => {
+    if (!isModalOpen) {
+      return undefined;
+    }
+
+    lenisRef.current?.stop();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+      if (selectedProject) {
+        setSelectedProject(null);
+      } else if (selectedClient) {
+        setSelectedClient(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      lenisRef.current?.start();
+    };
+  }, [isModalOpen, selectedProject, selectedClient]);
 
   const visibleProjects = useMemo(
     () =>
@@ -154,6 +403,10 @@ function App() {
     [visibleProjects],
   );
 
+  useScrollReveal(galleryItems);
+
+  const closeProject = () => setSelectedProject(null);
+
   return (
     <main>
       <nav className="nav shell" aria-label="Primary navigation">
@@ -162,6 +415,7 @@ function App() {
         </a>
         <div className="nav-links">
           <a href="#work">Work</a>
+          <a href="#tools">Tools</a>
           <a href="#about">About</a>
           <a className="nav-contact" href="#contact">
             Let’s talk <ArrowUpRight />
@@ -170,31 +424,43 @@ function App() {
       </nav>
 
       <section className="hero shell" id="home">
-        <p className="eyebrow">
+        <p className="eyebrow" data-reveal>
           <span></span> Available for creative work
         </p>
         <div className="hero-grid">
           <div>
-            <h1>
+            <h1 data-reveal style={{ "--reveal-delay": "60ms" }}>
               Design that gives
               <br />
               <em>ideas a presence.</em>
             </h1>
-            <p className="intro">
+            <p
+              className="intro"
+              data-reveal
+              style={{ "--reveal-delay": "120ms" }}
+            >
               I’m Giovannette Valle, a graphic designer creating thoughtful
               visuals for brands, events, and communities.
             </p>
-            <a href="#work" className="button button-dark">
+            <a
+              href="#work"
+              className="button button-dark"
+              data-reveal
+              style={{ "--reveal-delay": "180ms" }}
+            >
               Explore selected work <ArrowUpRight />
             </a>
           </div>
-          <div className="hero-portrait-wrap">
+          <div className="hero-portrait-wrap" data-reveal>
             <div className="shape shape-one"></div>
             <div className="shape shape-two"></div>
             <img
               className="hero-portrait"
               src={profileImage}
               alt="Giovannette Valle"
+              width="290"
+              height="344"
+              fetchPriority="high"
             />
             <p className="portrait-note">
               Graphic
@@ -203,14 +469,14 @@ function App() {
             </p>
           </div>
         </div>
-        <div className="scroll-note">
+        <div className="scroll-note" data-reveal>
           Scroll to discover <span>↓</span>
         </div>
       </section>
 
       <section className="work-section" id="work">
         <div className="shell section-heading">
-          <div>
+          <div data-reveal>
             <p className="eyebrow">Selected projects</p>
             <h2>
               A selection of
@@ -218,7 +484,7 @@ function App() {
               recent <em>work.</em>
             </h2>
           </div>
-          <p className="section-copy">
+          <p className="section-copy" data-reveal>
             From bold event collateral to apparel and social campaigns, each
             project is designed to connect, communicate, and stand out.
           </p>
@@ -227,6 +493,7 @@ function App() {
           className="shell filters"
           role="tablist"
           aria-label="Project categories"
+          data-reveal
         >
           {[
             ["all", "All work"],
@@ -255,6 +522,8 @@ function App() {
               <button
                 key={item.key}
                 className="project-card client-card-inline"
+                data-reveal
+                style={{ "--reveal-delay": `${(index % 3) * 70}ms` }}
                 onClick={() => setSelectedClient(item.group)}
                 aria-label={`View ${item.group.name} projects`}
               >
@@ -264,6 +533,8 @@ function App() {
                     alt=""
                     loading="lazy"
                     decoding="async"
+                    width="720"
+                    height="720"
                   />
                   <span className="client-count-badge">
                     {item.group.projects.length} projects
@@ -298,11 +569,35 @@ function App() {
         </div>
       </section>
 
+      <section className="tools-section" id="tools">
+        <div className="shell">
+          <div className="tools-heading">
+            <div data-reveal>
+              <p className="eyebrow">Tools & process</p>
+              <h2>
+                The toolkit behind
+                <br />
+                every <em>project.</em>
+              </h2>
+            </div>
+            <p className="section-copy" data-reveal>
+              Every brief calls for a different approach. These are the tools I
+              reach for to take an idea from first sketch to finished artwork.
+            </p>
+          </div>
+          <div className="tools-grid">
+            {tools.map((tool, index) => (
+              <ToolCard key={tool.name} tool={tool} index={index} />
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="about shell" id="about">
-        <div className="about-label">
+        <div className="about-label" data-reveal>
           <p className="eyebrow">About & experience</p>
         </div>
-        <div className="about-content">
+        <div className="about-content" data-reveal>
           <h2>
             Making meaningful design
             <br />
@@ -334,7 +629,7 @@ function App() {
       </section>
 
       <footer id="contact">
-        <div className="shell footer-content">
+        <div className="shell footer-content" data-reveal>
           <p className="eyebrow light">Have a project in mind?</p>
           <h2>
             Let’s make something
@@ -351,76 +646,22 @@ function App() {
         </div>
       </footer>
 
-      {selectedProject && (
-        <div
-          className="modal-backdrop"
-          role="presentation"
-          onClick={() => setSelectedProject(null)}
-        >
-          <div
-            className="project-modal"
-            data-lenis-prevent
-            role="dialog"
-            aria-modal="true"
-            aria-label={selectedProject.title}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              className="close-modal"
-              onClick={() => setSelectedProject(null)}
-              aria-label="Close project"
-            >
-              ×
-            </button>
-            <img src={selectedProject.image} alt={selectedProject.title} />
-            <div>
-              <p>{selectedProject.label}</p>
-              <h3>{selectedProject.title}</h3>
-            </div>
-          </div>
-        </div>
+      {selectedClient && (
+        <ClientModal
+          client={selectedClient}
+          onClose={() => setSelectedClient(null)}
+          onOpenProject={(project) => setSelectedProject(project)}
+        />
       )}
 
-      {selectedClient && (
-        <div
-          className="modal-backdrop"
-          role="presentation"
-          onClick={() => setSelectedClient(null)}
-        >
-          <div
-            className="client-modal"
-            data-lenis-prevent
-            role="dialog"
-            aria-modal="true"
-            aria-label={selectedClient.name}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              className="close-modal"
-              onClick={() => setSelectedClient(null)}
-              aria-label="Close"
-            >
-              ×
-            </button>
-            <div className="client-modal-header">
-              <p className="eyebrow">Client</p>
-              <h3>{selectedClient.name}</h3>
-            </div>
-            <div className="gallery client-modal-gallery">
-              {selectedClient.projects.map((project, index) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  index={index}
-                  onClick={() => {
-                    setSelectedProject(project);
-                    setSelectedClient(null);
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
+      {selectedProject && (
+        <ProjectModal
+          key={selectedProject.id}
+          project={selectedProject}
+          client={selectedClient}
+          onClose={closeProject}
+          onBackToClient={closeProject}
+        />
       )}
     </main>
   );

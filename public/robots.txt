@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://igotw.github.io/giovannettePortfolio/sitemap.xml
