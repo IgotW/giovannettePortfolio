@@ -2,16 +2,16 @@
 // (case-insensitive) will show up under that client's card — regardless
 // of whether it's a poster, apparel, plaque, or logo.
 const clients = [
-  "Capitol Sportfest 2026",
-  "CTU",
-  "Cabiao",
-  "Kadaugan",
-  "Prime Movers",
-  "Tabogon Mayors Cup",
-  "Kulas Design",
-  "Sinulog Volleyball Cup",
-  "WorkWise",
-  "Papaia",
+  "CABIAO",
+  "CAPITOL",
+  "CDU CAMS",
+  "CEBU LABORATORY",
+  "KULAS DESIGN",
+  "MRF",
+  "PRIME MOVERS",
+  "RF VILLO",
+  "SINULOG",
+  "PAPAIA",
 ];
 
 export default clients;

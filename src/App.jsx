@@ -20,8 +20,10 @@ const categoryMeta = {
   poster: { label: "Print & Social" },
   apparel: { label: "Apparel" },
   plaques: { label: "Recognition" },
+  signage: { label: "Store Signage" },
   logo: { label: "Logo" },
   uiux: { label: "Web & Mobile" },
+  commission: { label: "Commission" },
 };
 const makeTitle = (file) =>
   file
@@ -233,6 +235,8 @@ function App() {
             ["plaques", "Recognition"],
             ["logo", "Logo"],
             ["uiux", "Web & Mobile"],
+            ["commission", "Commission"],
+            ["signage", "Store Signage"],
           ].map(([value, label]) => (
             <button
               key={value}
