@@ -379,7 +379,6 @@ footer h2 {
   grid-template-columns: 0.65fr 1.35fr;
   padding: 112px 0;
 }
-
 .about-content {
   max-width: 700px;
 }
@@ -622,7 +621,6 @@ footer em {
   transform: rotate(90deg);
   background: #ed5e41;
 }
-
 .client-modal {
   position: relative;
   width: min(1100px, 100%);
@@ -656,7 +654,6 @@ footer em {
   gap: 32px 18px;
   margin-top: 28px;
 }
-
 .client-count-badge {
   position: absolute;
   bottom: 12px;
@@ -671,8 +668,6 @@ footer em {
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
-
-/* Minimal scroll reveals, enabled only when motion is allowed. */
 .reveal-ready [data-reveal] {
   opacity: 0;
   transform: translateY(20px);
@@ -685,7 +680,6 @@ footer em {
   opacity: 1;
   transform: none;
 }
-
 @keyframes backdrop-in {
   from {
     opacity: 0;
@@ -704,13 +698,11 @@ footer em {
     transform: none;
   }
 }
-
 @media (max-width: 1000px) {
   .tools-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
-
 @media (max-width: 720px) {
   .shell {
     width: min(100% - 36px, 1180px);
@@ -849,7 +841,6 @@ footer em {
     padding-bottom: 18px;
   }
 }
-
 @media (max-width: 520px) {
   .tools-grid {
     grid-template-columns: 1fr;
@@ -859,7 +850,6 @@ footer em {
     gap: 24px;
   }
 }
-
 @media (prefers-reduced-motion: reduce) {
   .reveal-ready [data-reveal] {
     opacity: 1;
@@ -877,8 +867,6 @@ footer em {
     transition: none;
   }
 }
-
-/* Keep off-screen cards out of the render pipeline until they approach view. */
 .project-image {
   content-visibility: auto;
   contain-intrinsic-size: 360px 367px;

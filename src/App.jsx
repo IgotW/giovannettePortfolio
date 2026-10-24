@@ -67,19 +67,63 @@ const toolIcons = {
   figma: IconBrandFigma,
 };
 
+// function buildGalleryItems(projectList, clientNames) {
+//   // Figure out which projects belong to which client
+//   const groupsByClient = clientNames
+//     .map((name) => ({
+//       name,
+//       projects: projectList.filter((project) =>
+//         project.title.toLowerCase().includes(name.toLowerCase()),
+//       ),
+//     }))
+//     .filter((group) => group.projects.length > 1); // only real "multi" clients
+
+//   const groupedProjectIds = new Set(
+//     groupsByClient.flatMap((group) => group.projects.map((p) => p.id)),
+//   );
+
+//   const addedClientNames = new Set();
+//   const items = [];
+
+//   for (const project of projectList) {
+//     if (groupedProjectIds.has(project.id)) {
+//       const group = groupsByClient.find((g) =>
+//         g.projects.some((p) => p.id === project.id),
+//       );
+//       if (!addedClientNames.has(group.name)) {
+//         addedClientNames.add(group.name);
+//         items.push({ type: "client", key: `client-${group.name}`, group });
+//       }
+//       // skip pushing this project individually — it's inside the client card
+//     } else {
+//       items.push({ type: "project", key: `project-${project.id}`, project });
+//     }
+//   }
+
+//   return items;
+// }
+
 function buildGalleryItems(projectList, clientNames) {
-  // Figure out which projects belong to which client
   const groupsByClient = clientNames
-    .map((name) => ({
-      name,
-      projects: projectList.filter((project) =>
-        project.title.toLowerCase().includes(name.toLowerCase()),
-      ),
+    .map((client) => ({
+      name: typeof client === "string" ? client : client.name,
+      keywords: typeof client === "string" ? [client] : client.keywords,
+      projects: projectList.filter((project) => {
+        const title = project.title.toLowerCase();
+
+        return typeof client === "string"
+          ? title.includes(client.toLowerCase())
+          : client.keywords.some((keyword) =>
+              title.includes(keyword.toLowerCase()),
+            );
+      }),
     }))
-    .filter((group) => group.projects.length > 1); // only real "multi" clients
+    .filter((group) => group.projects.length > 1);
 
   const groupedProjectIds = new Set(
-    groupsByClient.flatMap((group) => group.projects.map((p) => p.id)),
+    groupsByClient.flatMap((group) =>
+      group.projects.map((project) => project.id),
+    ),
   );
 
   const addedClientNames = new Set();
@@ -87,16 +131,24 @@ function buildGalleryItems(projectList, clientNames) {
 
   for (const project of projectList) {
     if (groupedProjectIds.has(project.id)) {
-      const group = groupsByClient.find((g) =>
-        g.projects.some((p) => p.id === project.id),
+      const group = groupsByClient.find((client) =>
+        client.projects.some((p) => p.id === project.id),
       );
+
       if (!addedClientNames.has(group.name)) {
         addedClientNames.add(group.name);
-        items.push({ type: "client", key: `client-${group.name}`, group });
+        items.push({
+          type: "client",
+          key: `client-${group.name}`,
+          group,
+        });
       }
-      // skip pushing this project individually — it's inside the client card
     } else {
-      items.push({ type: "project", key: `project-${project.id}`, project });
+      items.push({
+        type: "project",
+        key: `project-${project.id}`,
+        project,
+      });
     }
   }
 
@@ -192,7 +244,10 @@ function ToolCard({ tool, index }) {
         <h3>{tool.name}</h3>
         <p>{tool.description}</p>
       </div>
-      <ul className="tool-tags" aria-label={`Used for ${tool.usedFor.join(", ")}`}>
+      <ul
+        className="tool-tags"
+        aria-label={`Used for ${tool.usedFor.join(", ")}`}
+      >
         {tool.usedFor.map((category) => (
           <li key={category}>{category}</li>
         ))}
@@ -278,11 +333,7 @@ function ClientModal({ client, onClose, onOpenProject }) {
   useScrollReveal(client.name);
 
   return (
-    <div
-      className="modal-backdrop"
-      role="presentation"
-      onClick={onClose}
-    >
+    <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <div
         className="client-modal"
         data-lenis-prevent

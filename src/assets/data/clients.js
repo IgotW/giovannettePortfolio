@@ -1,17 +1,18 @@
-// Add a client name here. Any project whose title contains this name
-// (case-insensitive) will show up under that client's card — regardless
-// of whether it's a poster, apparel, plaque, or logo.
 const clients = [
-  "CABIAO",
-  "CAPITOL",
-  "CDU CAMS",
-  "CEBU LABORATORY",
-  "KULAS DESIGN",
-  "MRF",
-  "PRIME MOVERS",
-  "RF VILLO",
-  "SINULOG",
-  "PAPAIA",
+  { name: "CABIAO", keywords: ["CABIAO"] },
+  { name: "CAPITOL", keywords: ["CAPITOL"] },
+  {
+    name: "CEBU DOCTORS UNIVERSITY - CAMS (SPORTS WEAR)",
+    keywords: ["CDU CAMS"],
+  },
+  { name: "CEBU LABORATORY", keywords: ["CEBU LABORATORY"] },
+  { name: "KULAS DESIGN", keywords: ["KULAS DESIGN"] },
+  { name: "MRF TYRES", keywords: ["MRF"] },
+  { name: "PRIME MOVERS", keywords: ["PRIME MOVERS"] },
+  { name: "RF VILLO", keywords: ["RF VILLO"] },
+  { name: "SINULOG", keywords: ["SINULOG"] },
+  { name: "PAPAIA", keywords: ["PAPAIA"] },
+  { name: "UNLEASH POTENTIAL", keywords: ["UNLEASH POTENTIAL"] },
 ];
 
 export default clients;
